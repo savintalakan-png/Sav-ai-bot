@@ -23,13 +23,11 @@ def health():
     return "Bot is running!"
 
 def run_flask():
-    app.run(host='0.0.0.0', port=8080)
-
-def get_main_menu():
+    app.run(host='0.0.0.0', port=8080)def get_main_menu():
     keyboard = [
         [InlineKeyboardButton("💬 Чат с ИИ", callback_data='chat'),
-         InlineKeyboardButton(" Генерация картинок", callback_data='image')],
-        [InlineKeyboardButton("📊 Крипто-анализ", callback_data='crypto'),
+         InlineKeyboardButton("🎨 Генерация картинок", callback_data='image')],
+        [InlineKeyboardButton(" Крипто-анализ", callback_data='crypto'),
          InlineKeyboardButton("👤 Мой аккаунт", callback_data='account')]
     ]
     return InlineKeyboardMarkup(keyboard)
@@ -40,7 +38,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     is_premium = db.is_premium(user.id)
     remaining = db.get_remaining_messages(user.id)
     premium_text = "⭐ Premium: безлимитный доступ" if is_premium else "🆓 Бесплатный план: 10 сообщений в день"
-    remaining_text = f"Осталось сообщений сегодня: {remaining if remaining != float('inf') else ''}"
+    remaining_text = f"Осталось сообщений сегодня: {remaining if remaining != float('inf') else '∞'}"
     await update.message.reply_text(
         f"👋 Привет, {user.first_name}!\n\nЯ ваш ИИ-помощник SAV AI.\n\n{premium_text}\n{remaining_text}\n\nВыберите действие в меню ниже 👇",
         reply_markup=get_main_menu()
@@ -48,12 +46,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Выберите действие:", reply_markup=get_main_menu())
+
 async def premium(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     db.set_premium(user.id, days=30)
-    await update.message.reply_text("⭐ Premium активирован на 30 дней!\nТеперь у вас безлимитный доступ ко всем функциям.")
-
-async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("⭐ Premium активирован на 30 дней!\nТеперь у вас безлимитный доступ ко всем функциям.")async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     user = update.effective_user
@@ -67,7 +64,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
     elif data == 'image':
         user_states[user.id] = 'image'
-        await query.edit_message_text("🎨 **Генерация изображений**\n\nОпиши картинку, которую хочешь создать.\nНапример: закат над морем, неоновый город, кот-астронавт", parse_mode='Markdown')
+        await query.edit_message_text(" **Генерация изображений**\n\nОпиши картинку, которую хочешь создать.\nНапример: закат над морем, неоновый город, кот-астронавт", parse_mode='Markdown')
     elif data == 'crypto':
         await query.edit_message_text("📊 Загружаю данные о криптовалютах...")
         result, error = get_crypto_prices()
@@ -79,9 +76,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         is_premium = db.is_premium(user.id)
         remaining = db.get_remaining_messages(user.id)
         status = "⭐ Premium" if is_premium else "🆓 Бесплатный"
-        await query.edit_message_text(f"👤 **Ваш аккаунт**\n\nID: {user.id}\nИмя: {user.first_name}\nСтатус: {status}\nОсталось сообщений: {remaining if remaining != float('inf') else '∞'}", parse_mode='Markdown')
-
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        await query.edit_message_text(f"👤 **Ваш аккаунт**\n\nID: {user.id}\nИмя: {user.first_name}\nСтатус: {status}\nОсталось сообщений: {remaining if remaining != float('inf') else '∞'}", parse_mode='Markdown')async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     user_id = user.id
     message_text = update.message.text
@@ -96,10 +91,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("🤔 Думаю...")
         response, error = chat_with_groq(message_text)
         provider = "Groq (Llama-3.3-70b)"
-        if error or not response:            response, error = chat_with_gemini(message_text)
+        if error or not response:
+            response, error = chat_with_gemini(message_text)
             provider = "Gemini"
         if error:
-            await update.message.reply_text(f"❌ Ошибка ИИ: {error}")
+            await update.message.reply_text(f" Ошибка ИИ: {error}")
         else:
             db.save_message(user_id, message_text, response, provider)
             db.increment_usage(user_id)
@@ -115,11 +111,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             db.increment_usage(user_id)
             remaining = db.get_remaining_messages(user_id)
             remaining_text = remaining if remaining != float('inf') else '∞'
-            await update.message.reply_photo(photo=image_url, caption=f"🎨 {message_text}\n\nОсталось сообщений: {remaining_text}")
+            await update.message.reply_photo(photo=image_url, caption=f" {message_text}\n\nОсталось сообщений: {remaining_text}")
     else:
-        await update.message.reply_text("Выберите действие в меню:", reply_markup=get_main_menu())
-
-def main():
+        await update.message.reply_text("Выберите действие в меню:", reply_markup=get_main_menu())def main():
     if not BOT_TOKEN:
         logger.error("BOT_TOKEN не найден!")
         return
