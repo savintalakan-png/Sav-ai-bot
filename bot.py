@@ -1,5 +1,4 @@
 import os
-import io
 import logging
 from flask import Flask
 from threading import Thread
@@ -47,8 +46,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     remaining = db.get_remaining_messages(user.id)
     
     premium_text = "⭐ Premium: безлимитный доступ" if is_premium else "🆓 Бесплатный план: 10 сообщений в день"
-    remaining_text = f"Осталось сообщений сегодня: {remaining if remaining != float('inf') else '∞'}"    
-    await update.message.reply_text(
+    remaining_text = f"Осталось сообщений сегодня: {remaining if remaining != float('inf') else '∞'}"
+        await update.message.reply_text(
         f"👋 Привет, {user.first_name}!\n\n"
         f"Я ваш ИИ-помощник SAV AI.\n\n"
         f"{premium_text}\n"
@@ -96,8 +95,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "Опиши картинку, которую хочешь создать.\n"
             "Например: закат над морем, неоновый город, кот-астронавт",
             parse_mode='Markdown'
-        )    
-    elif data == 'crypto':
+        )
+        elif data == 'crypto':
         await query.edit_message_text("📊 Загружаю данные о криптовалютах...")
         
         result, error = get_crypto_prices()
@@ -144,9 +143,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     
     if state == 'chat':
-        await update.message.reply_text(" Думаю...")
-                response, error = chat_with_groq(message_text)
-        provider = "Groq (Llama-3.3-70b)"
+        await update.message.reply_text("🤔 Думаю...")
+        
+        response, error = chat_with_groq(message_text)        provider = "Groq (Llama-3.3-70b)"
         
         if error or not response:
             response, error = chat_with_gemini(message_text)
@@ -169,21 +168,18 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif state == 'image':
         await update.message.reply_text("🎨 Генерирую изображение... подожди немного ⏳")
         
-        image_data, error = generate_image(message_text)
+        image_url, error = generate_image(message_text)
         
         if error:
             await update.message.reply_text("❌ Не удалось сгенерировать изображение. Попробуй другой запрос или повтори позже.")
         else:
             db.increment_usage(user_id)
             
-            photo = io.BytesIO(image_data)
-            photo.name = 'generated.jpg'
-            
-            remaining = db.get_remaining_messages(user_id)
+            remaining = db.get_remaining_messages(user.id)
             remaining_text = remaining if remaining != float('inf') else '∞'
             
             await update.message.reply_photo(
-                photo=photo,
+                photo=image_url,
                 caption=f"🎨 {message_text}\n\nОсталось сообщений: {remaining_text}"
             )
     
@@ -194,12 +190,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 def main():
-    if not BOT_TOKEN:        logger.error("BOT_TOKEN не найден!")
+    if not BOT_TOKEN:
+        logger.error("BOT_TOKEN не найден!")
         return
     
-    logger.info("Бот запускается...")
-    
-    # Запускаем Flask в отдельном потоке (для Render)
+    logger.info("Бот запускается...")    
     flask_thread = Thread(target=run_flask)
     flask_thread.daemon = True
     flask_thread.start()
